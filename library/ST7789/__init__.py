@@ -99,7 +99,7 @@ class ST7789(object):
     """Representation of an ST7789 TFT LCD."""
 
     def __init__(self, port, cs, dc, backlight=None, rst=None, width=240,
-                 height=240, rotation=90, invert=True, spi_speed_hz=4000000):
+                 height=240, rotation=90, invert=True, spi_speed_hz=4000000, using_opencv=False):
         """Create an instance of the display using SPI communication.
 
         Must provide the GPIO pin number for the D/C pin and the SPI driver.
@@ -115,6 +115,7 @@ class ST7789(object):
         :param rotation: Rotation of display connected to ST7789
         :param invert: Invert display
         :param spi_speed_hz: SPI speed (in Hz)
+        :param using_opencv: using ST7789 with OpenCV image 
 
         """
 
@@ -132,6 +133,7 @@ class ST7789(object):
         self._height = height
         self._rotation = rotation
         self._invert = invert
+        self._using_opencv = using_opencv
 
         self._offset_left = 0
         self._offset_top = 0
@@ -347,7 +349,9 @@ class ST7789(object):
         """Generator function to convert a PIL image to 16-bit 565 RGB bytes."""
         # NumPy is much faster at doing this. NumPy code provided by:
         # Keith (https://www.blogger.com/profile/02555547344016007163)
-        pb = np.rot90(np.array(image.convert('RGB')), rotation // 90).astype('uint8')
+        if not self._using_opencv:
+            image = np.array(image.convert('RGB'))
+        pb = np.rot90(image, rotation // 90).astype('uint8')
 
         result = np.zeros((self._width, self._height, 2), dtype=np.uint8)
         result[..., [0]] = np.add(np.bitwise_and(pb[..., [0]], 0xF8), np.right_shift(pb[..., [1]], 5))
